@@ -1,0 +1,11 @@
+{
+  "name": "social-agent-frontend-workspace",
+  "private": true,
+  "scripts": {
+    "install:app": "npm --prefix social-agent-ai install",
+    "dev": "npm --prefix social-agent-ai run dev --",
+    "build": "npm --prefix social-agent-ai run build --",
+    "lint": "npm --prefix social-agent-ai run lint --",
+    "preview": "npm --prefix social-agent-ai run preview --"
+  }
+}

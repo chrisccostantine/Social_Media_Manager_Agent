@@ -1,127 +1,153 @@
 import axios from "axios";
 import { useState } from "react";
+import "./App.css";
+
+const apiUrl = "http://localhost:5000/generate-content";
+
+const initialForm = {
+  brand: "",
+  product: "",
+  audience: "",
+  platform: "Instagram, TikTok, LinkedIn",
+  tone: "Friendly, confident",
+  goal: "Increase leads and sales",
+  frequency: "1 post daily",
+  notes: "",
+};
+
+function ListSection({ title, items }) {
+  if (!items?.length) {
+    return null;
+  }
+
+  return (
+    <section className="card">
+      <h3>{title}</h3>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function App() {
-  const [brand, setBrand] = useState("");
-  const [product, setProduct] = useState("");
-  const [audience, setAudience] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [tone, setTone] = useState("");
-  const [result, setResult] = useState("");
+  const [form, setForm] = useState(initialForm);
+  const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const updateField = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
 
   const generate = async () => {
     setLoading(true);
     setError("");
-    setResult("");
 
     try {
-      const res = await axios.post("http://localhost:5000/generate-content", {
-        brand,
-        product,
-        audience,
-        platform,
-        tone,
-      });
-
-      console.log("FULL RESPONSE:", res.data);
-
-      setResult(res.data.data || "No content returned");
+      const res = await axios.post(apiUrl, form);
+      setResult(res.data.data);
     } catch (err) {
-      console.error("Frontend error:", err);
       setError(err?.response?.data?.error || err.message || "Request failed");
+      setResult(null);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "700px",
-        margin: "40px auto",
-        padding: "20px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h1>AI Social Media Agent</h1>
+    <main className="app-shell">
+      <header>
+        <p className="badge">Social Media Manager AI Agent</p>
+        <h1>Plan, create, and execute social content in one click</h1>
+        <p className="subhead">
+          Fill in your business context and generate a practical weekly strategy,
+          ready-to-post captions, stories, hashtags, and automation suggestions.
+        </p>
+      </header>
 
-      <input
-        type="text"
-        placeholder="Brand"
-        value={brand}
-        onChange={(e) => setBrand(e.target.value)}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
-      />
+      <section className="card form-card">
+        <div className="grid">
+          {Object.keys(initialForm).map((field) => (
+            <label key={field} className={field === "notes" ? "full" : ""}>
+              <span>{field}</span>
+              {field === "notes" ? (
+                <textarea
+                  rows={3}
+                  value={form[field]}
+                  onChange={updateField(field)}
+                />
+              ) : (
+                <input value={form[field]} onChange={updateField(field)} />
+              )}
+            </label>
+          ))}
+        </div>
 
-      <input
-        type="text"
-        placeholder="Product"
-        value={product}
-        onChange={(e) => setProduct(e.target.value)}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
-      />
-
-      <input
-        type="text"
-        placeholder="Audience"
-        value={audience}
-        onChange={(e) => setAudience(e.target.value)}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
-      />
-
-      <input
-        type="text"
-        placeholder="Platform"
-        value={platform}
-        onChange={(e) => setPlatform(e.target.value)}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
-      />
-
-      <input
-        type="text"
-        placeholder="Tone"
-        value={tone}
-        onChange={(e) => setTone(e.target.value)}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
-      />
-
-      <button
-        onClick={generate}
-        disabled={loading}
-        style={{
-          padding: "12px 20px",
-          backgroundColor: "#111",
-          color: "#fff",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-        }}
-      >
-        {loading ? "Generating..." : "Generate Content"}
-      </button>
-
-      {error && <p style={{ color: "red", marginTop: "20px" }}>{error}</p>}
+        <button onClick={generate} disabled={loading}>
+          {loading ? "Generating full social plan..." : "Generate Social Media Plan"}
+        </button>
+        {error && <p className="error">{error}</p>}
+      </section>
 
       {result && (
-        <div
-          style={{
-            marginTop: "24px",
-            padding: "24px",
-            backgroundColor: "#f8f8f8",
-            color: "#111",
-            borderRadius: "14px",
-            whiteSpace: "pre-wrap",
-            lineHeight: "1.8",
-            fontSize: "17px",
-            textAlign: "left",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-          }}
-        >
-          {result.replace(/\*\*/g, "")}
-        </div>
+        <section className="results">
+          <section className="card">
+            <h3>Strategy summary</h3>
+            <p>{result.strategySummary || result.raw}</p>
+          </section>
+
+          <ListSection
+            title="Profile optimization checklist"
+            items={result.profileOptimization}
+          />
+          <ListSection title="Content pillars" items={result.contentPillars} />
+          <ListSection title="Story ideas" items={result.storyIdeas} />
+          <ListSection title="Community plan" items={result.communityPlan} />
+          <ListSection
+            title="Automation recommendations"
+            items={result.automationRecommendations}
+          />
+          <ListSection title="Metrics to track" items={result.metricsToTrack} />
+
+          <section className="card">
+            <h3>Short ad copy</h3>
+            <p>{result.shortAdCopy}</p>
+          </section>
+
+          {result.weeklyCalendar?.length ? (
+            <section className="card">
+              <h3>Weekly posting calendar</h3>
+              <div className="calendar-list">
+                {result.weeklyCalendar.map((entry) => (
+                  <article key={`${entry.day}-${entry.platform}`}>
+                    <h4>
+                      {entry.day} · {entry.platform} · {entry.postType}
+                    </h4>
+                    <p>
+                      <strong>Hook:</strong> {entry.hook}
+                    </p>
+                    <p>
+                      <strong>Caption:</strong> {entry.caption}
+                    </p>
+                    <p>
+                      <strong>CTA:</strong> {entry.cta}
+                    </p>
+                    <p>
+                      <strong>Best time:</strong> {entry.bestTime}
+                    </p>
+                    <p>
+                      <strong>Hashtags:</strong> {(entry.hashtags || []).join(" ")}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </section>
       )}
-    </div>
+    </main>
   );
 }
