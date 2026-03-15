@@ -1,8 +1,10 @@
 import axios from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 const apiUrl = "http://localhost:5000/generate-content";
+
+const requiredFields = ["brand", "product", "audience", "platform", "tone"];
 
 const initialForm = {
   brand: "",
@@ -31,11 +33,13 @@ function ListSection({ title, items }) {
     </section>
   );
 }
+
 export default function App() {
   const [form, setForm] = useState(initialForm);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const updateField = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
   };
@@ -44,10 +48,6 @@ export default function App() {
     () => requiredFields.filter((field) => !String(form[field] || "").trim()),
     [form],
   );
-
-  const updateField = (field) => (event) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
-  };
 
   const generate = async () => {
     if (missingRequired.length > 0) {
@@ -105,6 +105,7 @@ export default function App() {
             ? "Generating full social plan..."
             : "Generate Social Media Plan"}
         </button>
+
         {error && <p className="error">{error}</p>}
       </section>
 
@@ -132,6 +133,7 @@ export default function App() {
             <h3>Short ad copy</h3>
             <p>{result.shortAdCopy}</p>
           </section>
+
           {result.weeklyCalendar?.length ? (
             <section className="card">
               <h3>Weekly posting calendar</h3>

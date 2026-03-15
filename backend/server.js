@@ -14,16 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/generate-content", async (req, res) => {
-  const { brand, product, audience, platform, tone } = req.body;
-
-  if (!brand || !product || !audience || !platform || !tone) {
-    return res.status(400).json({
-      success: false,
-      error: "brand, product, audience, platform and tone are required",
-    });
-  }
-  try {
-    const result = await generateContent(req.body);
+  const normalizedBody = req.body;
 
   const missingFields = requiredFields.filter(
     (field) => !normalizedBody[field] || normalizedBody[field].length === 0,
@@ -48,7 +39,9 @@ app.post("/generate-content", async (req, res) => {
   } catch (error) {
     console.error(error);
 
-    const isMissingKey = String(error?.message || "").includes("OPENAI_API_KEY");
+    const isMissingKey = String(error?.message || "").includes(
+      "OPENAI_API_KEY",
+    );
 
     return res.status(500).json({
       success: false,
