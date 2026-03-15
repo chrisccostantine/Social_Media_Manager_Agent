@@ -13,6 +13,14 @@ app.get("/", (req, res) => {
 });
 
 app.post("/generate-content", async (req, res) => {
+  const { brand, product, audience, platform, tone } = req.body;
+
+  if (!brand || !product || !audience || !platform || !tone) {
+    return res.status(400).json({
+      success: false,
+      error: "brand, product, audience, platform and tone are required",
+    });
+  }
   try {
     const result = await generateContent(req.body);
 
