@@ -40,7 +40,22 @@ export default function App() {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
   };
 
+  const missingRequired = useMemo(
+    () => requiredFields.filter((field) => !String(form[field] || "").trim()),
+    [form],
+  );
+
+  const updateField = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
   const generate = async () => {
+    if (missingRequired.length > 0) {
+      setError(`Please fill: ${missingRequired.join(", ")}`);
+      setResult(null);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
