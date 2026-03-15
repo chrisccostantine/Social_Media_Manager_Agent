@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 const apiUrl = "http://localhost:5000/generate-content";
@@ -14,6 +14,8 @@ const initialForm = {
   frequency: "1 post daily",
   notes: "",
 };
+
+const requiredFields = ["brand", "product", "audience", "platform", "tone"];
 
 function ListSection({ title, items }) {
   if (!items?.length) {
@@ -38,11 +40,22 @@ export default function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const missingRequired = useMemo(
+    () => requiredFields.filter((field) => !String(form[field] || "").trim()),
+    [form],
+  );
+
   const updateField = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
   };
 
   const generate = async () => {
+    if (missingRequired.length > 0) {
+      setError(`Please fill: ${missingRequired.join(", ")}`);
+      setResult(null);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -50,7 +63,9 @@ export default function App() {
       const res = await axios.post(apiUrl, form);
       setResult(res.data.data);
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || "Request failed");
+      const backendMessage = err?.response?.data?.message;
+      const backendError = err?.response?.data?.error;
+      setError(backendMessage || backendError || err.message || "Request failed");
       setResult(null);
     } finally {
       setLoading(false);
@@ -69,26 +84,45 @@ export default function App() {
       </header>
 
       <section className="card form-card">
+        <p className="helper-text">
+          Required: brand, product, audience, platform, tone.
+        </p>
+
         <div className="grid">
           {Object.keys(initialForm).map((field) => (
             <label key={field} className={field === "notes" ? "full" : ""}>
-              <span>{field}</span>
+              <span>
+                {field}
+                {requiredFields.includes(field) ? " *" : ""}
+              </span>
               {field === "notes" ? (
                 <textarea
                   rows={3}
                   value={form[field]}
                   onChange={updateField(field)}
+                  placeholder={`Enter ${field}`}
                 />
               ) : (
-                <input value={form[field]} onChange={updateField(field)} />
+                <input
+                  value={form[field]}
+                  onChange={updateField(field)}
+                  placeholder={`Enter ${field}`}
+                />
               )}
             </label>
           ))}
         </div>
 
-        <button onClick={generate} disabled={loading}>
+        <button onClick={generate} disabled={loading || missingRequired.length > 0}>
           {loading ? "Generating full social plan..." : "Generate Social Media Plan"}
         </button>
+
+        {missingRequired.length > 0 && (
+          <p className="helper-text warning">
+            Missing required fields: {missingRequired.join(", ")}
+          </p>
+        )}
+
         {error && <p className="error">{error}</p>}
       </section>
 

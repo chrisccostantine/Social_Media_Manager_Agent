@@ -99,3 +99,15 @@ ul {
     grid-template-columns: 1fr;
   }
 }
+
+
+.helper-text {
+  margin: 0 0 0.75rem;
+  color: #3a4b75;
+  font-size: 0.9rem;
+}
+
+.helper-text.warning {
+  margin-top: 0.75rem;
+  color: #915f00;
+}

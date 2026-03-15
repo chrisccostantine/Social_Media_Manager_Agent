@@ -4,6 +4,7 @@ import express from "express";
 import { generateContent } from "./agent.js";
 
 const app = express();
+const requiredFields = ["brand", "product", "audience", "platform", "tone"];
 
 app.use(cors());
 app.use(express.json());
@@ -13,28 +14,44 @@ app.get("/", (req, res) => {
 });
 
 app.post("/generate-content", async (req, res) => {
-  const { brand, product, audience, platform, tone } = req.body;
+  const normalizedBody = Object.fromEntries(
+    Object.entries(req.body || {}).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.trim() : value,
+    ]),
+  );
 
-  if (!brand || !product || !audience || !platform || !tone) {
+  const missingFields = requiredFields.filter(
+    (field) => !normalizedBody[field] || normalizedBody[field].length === 0,
+  );
+
+  if (missingFields.length > 0) {
     return res.status(400).json({
       success: false,
-      error: "brand, product, audience, platform and tone are required",
+      error: "Missing required fields",
+      missingFields,
+      message: `Please provide: ${missingFields.join(", ")}`,
     });
   }
 
   try {
-    const result = await generateContent(req.body);
+    const result = await generateContent(normalizedBody);
 
-    res.json({
+    return res.json({
       success: true,
       data: result,
     });
   } catch (error) {
     console.error(error);
 
-    res.status(500).json({
+    const isMissingKey = String(error?.message || "").includes("OPENAI_API_KEY");
+
+    return res.status(500).json({
       success: false,
       error: "AI generation failed",
+      message: isMissingKey
+        ? "OPENAI_API_KEY is not configured on the backend server."
+        : "The AI service failed to generate content. Please try again.",
     });
   }
 });
